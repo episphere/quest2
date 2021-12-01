@@ -1,0 +1,140 @@
+.question {
+  font-family: Ariel, sans-serif;
+  padding: 20px;
+}
+
+/* this is an answer with a text area...*/
+
+.freeresponse {
+  display: flex;
+  width: 80%;
+}
+
+/* select labels inside freesponses */
+
+.freeresponse label {
+  flex-grow: 1;
+  text-align: left;
+  width: auto;
+}
+
+.freeresponse textarea,
+.question input[type="text"] {
+  flex-grow: 1;
+}
+
+.question input.styling[type="radio"] {
+  display: inline;
+}
+
+.question input[type="radio"] {
+  display: none;
+}
+
+.question input[type="checkbox"] {
+  display: none;
+}
+
+.show-button {
+  display: inline !important;
+}
+
+.response label {
+  display: block;
+  border-radius: 6px;
+  border: 3px rgb(240, 240, 240) solid;
+  background-color: rgb(240, 240, 240);
+  width: 95%;
+  padding-left: 20px !important;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+  font-family: "Arial", "sans-serif";
+  text-align: left;
+  text-transform: uppercase;
+  /* vertical-align: middle; */
+  display: block;
+}
+
+.response label {
+  padding-left: 10px;
+  padding-top: 10px;
+  display: block !important;
+}
+
+.response label:hover {
+  background-color: rgb(230, 230, 230);
+  border: 3px rgb(230, 230, 230) solid;
+}
+
+/* select all textareas immediately before a label*/
+
+/* label~textarea {} */
+
+/* select all labels immediately after a textarea */
+
+.question textarea + label {
+  float: right;
+}
+
+.question input[type="number"] {
+  display: block;
+  margin-top: 10px;
+}
+
+.question input[type="number"] + label {
+  display: none;
+}
+
+.question input[type="text"] {
+  display: block;
+}
+
+.question input[type="text"] + label {
+  display: none;
+}
+
+.question textarea {
+  display: block;
+}
+
+.question textarea + label {
+  display: none;
+}
+
+/* select all labels immediatle after a checked radio box */
+
+.question input[type="radio"]:checked + label {
+  border: solid 3px rgb(130, 193, 230);
+  background-color: rgb(60, 145, 222);
+  color: white;
+}
+
+.question input[type="checkbox"]:checked + label {
+  border: solid 3px rgb(130, 193, 230);
+  background-color: rgb(60, 145, 222);
+  color: white;
+}
+
+.question .next,
+.question .previous,
+.question .reset {
+  background-color: rgb(50, 122, 187);
+  color: white;
+  border: solid 3px rgb(50, 122, 187);
+  border-radius: 4px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  margin-top: 10px;
+}
+
+.question .next:hover,
+.question .previous:hover {
+  background-color: rgb(55, 133, 203);
+  border: solid 3px rgb(55, 133, 203);
+}
+
+.question form {
+  padding-top: 30px;
+}

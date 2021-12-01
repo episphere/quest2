@@ -1,0 +1,48 @@
+.bluegrad {
+  background: linear-gradient(to right, #24305e, lightblue);
+}
+
+.font-crimsontext {
+  font-family: "Crimson Text", serif;
+}
+.title {
+  margin: 0 0 0 20px;
+  line-height: 1;
+}
+
+nav li {
+  border-right: thin solid;
+}
+nav li:first-child {
+  border-left: thin solid;
+}
+nav a {
+  text-decoration: none;
+  color: inherit;
+}
+nav a:hover {
+  text-decoration: underline 3px;
+  color: inherit;
+}
+textarea {
+  resize: none;
+  white-space: pre-wrap;
+}
+.overflow-y-auto {
+  overflow-y: auto;
+}
+.overflow-y-scroll {
+  overflow-y: scroll;
+}
+#buttonRow {
+  height: fit-content;
+}
+.h-90 {
+  height: 90%;
+}
+.info {
+  font-size: small;
+  font-family: "Courier New", Courier, monospace;
+  background-color: lightgray;
+  border-bottom: thin black solid;
+}

@@ -1,0 +1,122 @@
+<html>
+  <head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <link href="css/quest.css" rel="stylesheet"/>
+    <link id="pagestyle" href="css/default.css" rel="stylesheet"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js" integrity="sha512-+BMamP0e7wn39JGL8nKAZ3yAQT2dL5oaXWr4ZYlTGkKOaoXM/Yj7c4oy50Ngz5yoUutAG17flueD4F6QpTlPng==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.0.0/math.min.js" integrity="sha512-2/6UJO9SBO6ElzgeETlFUdHgMkhe+0QZH64KTtz18x6GA3Z6PpBHDJFvWrGCsXVQI1E2S/pB4Zqqdn0MEv5+Vg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  </head>
+  <body class="m-0 h-100 mh-100">
+    <!-- because I flex column, stretching takes up the entire row (align-items-strecht)... -->
+    <div class="d-flex flex-column align-items-stretch h-100">
+
+      <!-- the first row is the nav bar-->
+      <div class="container-fluid flex-grow-0 bluegrad font-crimsontext">
+          <nav class="navbar navbar-expand navbar-dark">
+            <div class="d-flex flex-column">
+                <h1 class="navbar-text title">Quest</h1>
+                <div class="container-fluid">
+                    <ul class="navbar-nav navbar-collapse fs-5">
+                        <li class="nav-item nav-link"><a href="https://github.com/episphere/quest" target="_blank">Quest.js</a></li>
+                        <li class="nav-item nav-link"><a href="https://github.com/episphere/quest/wiki" target="_blank">Wiki</a></li>
+                        <li class="nav-item nav-link"><a href="https://github.com/episphere/quest/issues" target="_blank">Issues</a></li>
+                        <li class="nav-item nav-link"><a href="https://github.com/episphere/quest/projects/1" target="_blank">Project Page</a></li>
+                        <li class="nav-item nav-link"><a href="https://gitter.im/episphere/quest" target="_blank">Gitter</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+      </div>
+      <div class="d-flex flex-row flex-wrap">
+        <div class="p-2 flex-grow-1 border border-dark">
+          <h2>Questionaire Options</h2>
+          <form>
+            <div class="row mb-3 align-items-center">
+              <div class="col-auto">
+                <input type="file" id="file" class="form-control" />
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-auto">
+                <label for="url" class="form-label">Enter url: </label>
+              </div>
+              <div class="col-auto">
+                <input class="form-control" id="url" />
+              </div>
+              <div class="col-auto">
+                <button type="button" id="uploadURL" class="btn btn-primary mb-3">Submit</button>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-auto">
+                <label for="url" class="form-label">Filename: </label>
+              </div>
+              <div class="col-auto"><input class="form-control" id="filename" /></div>
+              <div class="col-auto">
+                <button type="button" id="filenameButton" class="btn btn-primary mb-3">Submit</button>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="p-2 flex-grow-1 border border-dark">
+          <h3>Styling</h3>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" value="css/default.css" id="nostyle" name="setStyle" checked/>
+            <label class="form-check-label" for="nostyle"> No Style </label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" value="css/style1.css" id="sytle1" name="setStyle"/>
+            <label class="form-check-label" for="style1"> Style1 </label>
+          </div>
+          <h3>Logic</h3>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" value="nostyle" id="nologic" name="logicCheck" checked/>
+            <label class="form-check-label" for="nologic"> Not active </label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" value="active" id="activeLogic" name="logicCheck" />
+            <label class="form-check-label" for="activeLogic"> Active </label>
+          </div>
+        </div>
+        <div class="p-2 flex-grow-1 border border-dark">
+          <h2>Previous Results</h2>
+          <form>
+            <div class="mb-3">
+              <textarea class="form-control" id="previousResultsTextArea" rows="5"></textarea>
+            </div>
+            <button type="button" id="addJSONButton" class="btn btn-primary">Add JSON to Memory</button>
+            <button type="button" id="clearLFButton" class="btn btn-primary">Clear Memory</button
+          </form>
+        </div>
+      </div>
+
+      <div class="flex-shrink-1 h-100 d-flex flex-row overflow-hidden">
+        <div class="p-2 h-100 d-flex w-50 flex-column border border-dark">
+            <h2>Markdown (<a href="#">demo</a>)</h2>
+            <textarea class="form-control h-100" id="markdown_textarea"></textarea>
+        </div>
+        <!-- the results-->
+        <div class="p-2 w-50 h-100 border border-dark overflow-y-hidden d-flex flex-column" id="questionContainer">
+          <div class='p-2 flex-shrink-1 h-100 overflow-y-scroll' id="renderedMarkdown"></div>
+          <div class='p-2 flex-grow-0 d-flex flex-row justify-content-between' id="buttonRow">
+            <button type="button" id="backButton" class="btn btn-primary invisible">Back</button>
+            <button type="button" id="nextButton" class="btn btn-primary invisible">Next</button>
+          </div>  
+
+         </div>
+        
+      </div>
+      <code>status: <span id="status"></span></code>
+    </div>
+  </body>
+  <script src="js/q.js" type="module"></script>
+
+</html>
