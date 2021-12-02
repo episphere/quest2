@@ -1,4 +1,4 @@
-import { parseModule, nextQuestion, lastQuestion, isLastQuestion, isFirstQuestion, clearLocalForage } from "./quest.js"
+import { parseModule, nextQuestion, lastQuestion, isLastQuestion, isFirstQuestion, clearLocalForage, render_question, renderCurrentQuestion } from "./quest.js"
 
 const markdown_element = document.getElementById("markdown_textarea")
 const rendered_text_element = document.getElementById("renderedMarkdown")
@@ -17,17 +17,16 @@ function throttle_parsing(fun, timeout = 100) {
     throttle_parsing.last = setTimeout(fun, timeout)
 }
 
-function tempFun() {
+async function tempFun() {
     statusElement.innerText = "parsing markdown"
     let curserLocation = markdown_element.selectionStart
-    questions = parseModule(markdown_element.value)
+    questions = await parseModule(markdown_element.value, rendered_text_element, previousResults);
     if (questions.length > 0) {
-        let cq = questions.find(element => {
+        let current_question = questions.find(element => {
             return (curserLocation >= element.markdown_start) && (curserLocation < element.markdown_end)
         })
-        if (!cq) cq = questions[questions.length - 1]
-        current_question = cq
-        render_question(current_question, { div: rendered_text_element, "back": backButton, 'next': nextButton })
+        if (!current_question) current_question = questions[questions.length - 1]
+        render_question(current_question)
     }
     window.questions = questions;
     statusElement.innerText = "ready"
@@ -60,23 +59,14 @@ window.addEventListener("hashchange", () => {
     history.pushState("", document.title, window.location.pathname + window.location.search)
 })
 
-function parseMarkdown() {
-    statusElement.innerText = "parsing markdown"
-    parseModule(markdown_element.value, rendered_text_element, previousResults)
-    document.getElementById("nextButton").click()
-    //    if (questions.length > 0) {
-    //        current_question = questions[0]
-    //        render_question(current_question, { div: rendered_text_element, "back": backButton, 'next': nextButton })
-    //    }
-    statusElement.innerText = "ready"
+async function parseMarkdown() {
+    statusElement.innerText = "parsing markdown";
+    await parseModule(markdown_element.value, rendered_text_element, previousResults);
+    showButtons();
+    statusElement.innerText = "ready";
 }
 
-function backOrNext(event) {
-    if (event.target.id == "nextButton") {
-        nextQuestion()
-    } else {
-        lastQuestion()
-    }
+function showButtons() {
     if (isLastQuestion()) {
         nextButton.classList.add("invisible")
     } else {
@@ -87,7 +77,15 @@ function backOrNext(event) {
     } else {
         backButton.classList.remove("invisible")
     }
+}
 
+function backOrNext(event) {
+    if (event.target.id == "nextButton") {
+        nextQuestion()
+    } else {
+        lastQuestion()
+    }
+    showButtons()
 }
 
 /*
@@ -117,12 +115,14 @@ Array.from(document.querySelectorAll("input[name=setStyle]")).forEach(element =>
 })
 
 //add to memory
-function addToMemory() {
+async function addToMemory() {
     let txt = document.getElementById("previousResultsTextArea").value
     try {
         if (txt.length > 0) {
             previousResults = JSON.parse(txt)
             console.log(previousResults)
+            statusElement.innerText = "Parsing Markdown"
+            await parseModule(markdown_element.value, rendered_text_element, previousResults);
             statusElement.innerText = "Ready"
         }
     } catch (e) {

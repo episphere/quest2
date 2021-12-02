@@ -10,12 +10,11 @@ export let questionQueue = null;
 export let previousResults = {};
 let questions = null;
 let rootElement = null;
+let moduleParams = {}
 
-// DR: This needs to be set in parseModule...
-export let lfInstance = localforage.createInstance({
-    'name': "quest",
-    'storeName': 'module1'
-})
+export let lfInstance = {};
+let lfTreeInstance = {}
+
 
 export function simple_question_reduce(previous, current, indx, array) {
     if (indx % 2 == 1) previous.push(current + array[indx + 1])
@@ -110,16 +109,43 @@ function convertMarkdownToQuestionObjects(previousValue, currentValue, indx) {
     return previousValue
 }
 
-// should refactor name to parseModule....
-// take a module and return an array of questions...
-// divElement is the element which we will put the results..
-export function parseModule(markdown, parentRootElement, oldResults) {
-    questionQueue = new Tree()
+
+function extract_module_name(markdown, otherParams) {
+    // look for the module name in either otherParams or the markdown
+    if (otherParams.hasOwnProperty("name")) {
+        moduleParams.name = otherParams.name;
+    } else {
+        let found = markdown.match(/\"?name\"?\s*:[\s\"]*(\w+)[\s"]*[,}]/)
+        moduleParams.name = (found) ? found[1] : "quest_module"
+    }
+    console.log("extracted module name: ", moduleParams.name)
+}
+
+async function create_local_forage_instance() {
+    lfInstance = localforage.createInstance({
+        'name': "quest",
+        'storeName': moduleParams.name
+    })
+    lfTreeInstance = localforage.createInstance({
+        'name': "quest",
+        'storeName': moduleParams.name + "_tree"
+    })
+}
+
+// take a module and create an array of questions...
+// parentRootElement is the element where we will put the results..
+// oldResults is where we place the results we need to pass in...
+export async function parseModule(markdown, parentRootElement, previousResults = {}, otherParams = {}) {
+    extract_module_name(markdown, otherParams);
+    await create_local_forage_instance()
+    await getTreeFromLocalForage()
+
+    // place some stuff in the DOM so that we can debug it...
+    // remove in the final release...
     window.questionQueue = questionQueue
+    window.previousResults = previousResults
 
     rootElement = parentRootElement;
-    previousResults = (oldResults == null) ? {} : oldResults;
-    window.previousResults = previousResults
     let questionRegex = /(\[[A-Z_]|\|grid\||<(?:\/)?loop)/g;
     questions = markdown.split(questionRegex)
     // the question/grid/loop markers are split so put them back together...
@@ -144,7 +170,14 @@ export function parseModule(markdown, parentRootElement, oldResults) {
         return q;
     })
     questions.forEach((q, indx) => questions[q.id] = indx);
+
+    nextQuestion()
     window.questions = questions;
+
+    // we need this for the dev tool.
+    // however actual users of the tool should
+    // ignore the return value.
+    return questions;
 }
 
 export function isLastQuestion() {
@@ -196,6 +229,7 @@ function render_error(question) {
 
 
 function render(question) {
+    console.log(`rendering ${question.id} in element `, rootElement)
     rootElement.innerText = ""
     let infoElement = document.createElement("div")
     infoElement.innerText = `id: ${question.id}  question: ${question.index}`;
@@ -672,6 +706,12 @@ export function lastQuestion() {
     if (questionQueue.isEmpty() || questionQueue.isFirst()) {
         return;
     }
+
+    // if this is not the last question, the clear the results of 
+    // of the next question.  Logic: I have not yet answered the 
+    // current question.  When I go back, I cannot delete this 
+    // answer (it does not exist).  But if I already went back
+    // one question.  I need to remove any value that was set.
     questionQueue.previous();
     render_question(questions[questions[questionQueue.currentNode.value]])
 
@@ -726,6 +766,8 @@ function updateTree() {
         console.log(`add ${questions[nextIndex].id} to the tree`)
         questionQueue.add(questions[nextIndex].id)
     }
+
+    updateTreeInLocalForage()
 }
 
 function renderNextQuestion() {
@@ -739,6 +781,13 @@ function renderNextQuestion() {
     render_question(questionToRender)
 }
 
+export function renderCurrentQuestion() {
+    if (questionQueue?.currentNode.value) {
+        let questionToRender = questions[questions[questionQueue.currentNode.value]]
+        render_question(questionToRender)
+    }
+
+}
 
 
 HTMLElement.prototype.clearValue = function () {
@@ -803,6 +852,22 @@ function addResetHandler(element) {
 
 export function clearLocalForage() {
     lfInstance.clear()
+    lfTreeInstance.clear()
+}
+
+async function getTreeFromLocalForage() {
+    questionQueue = new Tree();
+    let tree = await lfTreeInstance.getItem(moduleParams.name)
+    console.log(tree)
+    if (tree) {
+        questionQueue.loadFromVanillaObject(tree)
+    } else {
+        await updateTreeInLocalForage()
+    }
+}
+
+async function updateTreeInLocalForage() {
+    await lfTreeInstance.setItem(moduleParams.name, questionQueue)
 }
 
 async function saveResultsToLocalForage() {
