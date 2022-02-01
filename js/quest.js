@@ -1,4 +1,4 @@
-import { simpleLoopObject } from "./loop.js";
+import { simpleLoopObject, questionStartRegex } from "./loop.js";
 import { } from "./knownfunctions.js"
 import { argparser, safe } from "./utils.js";
 import { Tree } from './tree.js'
@@ -24,6 +24,7 @@ export function simple_question_reduce(previous, current, indx, array) {
 function grid_loop_reducer(startSign, stopSign) {
     return (previous, current) => {
         // the first question, just add...
+        
         if (previous.length == 0) {
             previous.push(current)
             return previous
@@ -101,7 +102,11 @@ function convertMarkdownToQuestionObjects(previousValue, currentValue, indx) {
         previousValue.push(makeSimpleQuestion(currentValue))
     } else if (currentValue.startsWith("<loop")) {
         previousValue.push(simpleLoopObject(currentValue, indx))
+        console.log('---------abcabc-------------')
+        console.log(previousValue)
+
         previousValue = previousValue.flat()
+        console.log(previousValue)
     } else {
         previousValue.push(makeGridQuestion(currentValue))
     }
@@ -139,18 +144,20 @@ export async function parseModule(markdown, parentRootElement, previousResults =
     extract_module_name(markdown, otherParams);
     await create_local_forage_instance()
     await getTreeFromLocalForage()
-
+    
     // place some stuff in the DOM so that we can debug it...
     // remove in the final release...
     window.questionQueue = questionQueue
     window.previousResults = previousResults
 
     rootElement = parentRootElement;
+    let origMarkdown = markdown;
+    markdown = removeComments(markdown)
+    
     let questionRegex = /(\[[A-Z_]|\|grid\||<(?:\/)?loop)/g;
     questions = markdown.split(questionRegex)
     // the question/grid/loop markers are split so put them back together...
     questions = questions.reduce(simple_question_reduce, [])
-
     // are the questions in a grid/loop
     // first deal with the loops (note: grid_loop_reducer return a function)
     questions = questions.reduce(grid_loop_reducer("<loop", "</loop>"), [])
@@ -158,17 +165,20 @@ export async function parseModule(markdown, parentRootElement, previousResults =
     questions = questions.reduce(grid_loop_reducer("|grid", "|"), [])
     // make the question objects...
     questions = questions.reduce(convertMarkdownToQuestionObjects, [])
+    
     questions = questions.map((q, indx, array) => {
         q.index = indx
         q.last = (indx > 0) ? array[indx - 1].id : null;
         q.next = ((indx + 1) < array.length) ? array[indx + 1].id : null;
         // loop ends dont keep the original markdown...
         if (q.orig) {
-            q.markdown_start = markdown.indexOf(q.orig)
+            q.markdown_start = origMarkdown.indexOf(q.orig)
             q.markdown_end = q.markdown_start + q.orig.length
         }
         return q;
     })
+    console.log('================dsbsdbsd=================')
+    console.log(questions)
     questions.forEach((q, indx) => questions[q.id] = indx);
 
     nextQuestion()
@@ -180,6 +190,11 @@ export async function parseModule(markdown, parentRootElement, previousResults =
     return questions;
 }
 
+function removeComments(markdown){
+    markdown = markdown.replace(/\/\*.*\*\//g, "");
+    markdown = markdown.replaceAll(/\/\/.*\n/g,"")
+    return markdown;
+}
 export function isLastQuestion() {
     return (questionQueue.currentNode.value == questions.length - 1)
 }
@@ -241,6 +256,14 @@ function render(question) {
 
     // replace #currentYear...
     let questText = question.markdown.replace(/#currentYear/g, new Date().getFullYear());
+
+    //replace comments
+    //console.log('replace comments!!!')
+    //console.log(questText)
+    questText = questText.replace(/\/\*[\s\S]+\*\//g, "");
+    questText = questText.replace(/\/\/.*\n/g, "");
+    //console.log(questText)
+
     // replace previous results $u
     // replace user profile variables...
     questText = questText.replace(/\{\$u:(\w+)}/g, (all, varid) => {
@@ -697,6 +720,8 @@ export function nextQuestion() {
         render_question(questions[questions[questionQueue.currentNode.value]])
         return;
     }
+    console.log('QUEUEUE')
+    console.log(questionQueue)
     saveResultsToLocalForage();
     updateTree();
     renderNextQuestion();
@@ -760,11 +785,50 @@ function updateTree() {
     })
 
     // before we just add the next question to the queue,
-    // make sure we dont have questions remaining in the queue...
+    // make sure we dont have questions remaining in the queue..
     if (goToNextQuestion && !questionQueue.hasNext()) {
         let nextIndex = parseInt(questions[questionQueue.currentNode.value]) + 1
-        console.log(`add ${questions[nextIndex].id} to the tree`)
-        questionQueue.add(questions[nextIndex].id)
+        if(nextIndex >= questions.length){
+            nextIndex = questions.length - 1;
+        }
+        if(questions[nextIndex].type == 'loop_end'){
+            //skip past loop_end
+            nextIndex += 1;
+        }
+        if(questions[nextIndex].type == 'loop_start'){
+            let numIters = questions[nextIndex].args.max
+            nextIndex += 1;
+            let nextArray = []
+
+            while(nextIndex < questions.length && questions[nextIndex].type !== "loop_end"){
+                
+                nextArray.push(questions[nextIndex].id)
+                nextIndex+=1;
+            }
+            
+            console.log(questions[nextIndex])
+            console.log('beginning loop!')
+            console.log(nextArray)
+            /*
+            let nIters = lfInstance.getItem(numIters).then((value)=>{
+                if(value == null){
+                    console.log(numIters)
+                    questionQueue.addLoop(nextArray, numIters)
+                }
+                else{
+                    console.log('ubsdlvisbdlvsdjvbs')
+                    console.log(nIters)
+                    questionQueue.addLoop(nextArray, nIters)
+                }
+            })
+            */
+           questionQueue.addLoop(nextArray, numIters)
+
+        }
+        else{
+            
+            questionQueue.add(questions[nextIndex].id)
+        }
     }
 
     updateTreeInLocalForage()
@@ -772,11 +836,13 @@ function updateTree() {
 
 function renderNextQuestion() {
     // get next item from the tree...
+    console.log('Next!')
+    console.log(questionQueue)
     questionQueue.next()
     let questionToRender = questions[questions[questionQueue.currentNode.value]]
 
     // check for a displayif...
-
+    
     // render it with the render function...
     render_question(questionToRender)
 }
@@ -850,7 +916,11 @@ function addResetHandler(element) {
     })
 }
 
-export function clearLocalForage() {
+export async function clearLocalForage() {
+    if(Object.keys(lfInstance).length == 0){
+        await create_local_forage_instance();
+    }
+    console.log(lfInstance)
     lfInstance.clear()
     lfTreeInstance.clear()
 }
@@ -858,7 +928,6 @@ export function clearLocalForage() {
 async function getTreeFromLocalForage() {
     questionQueue = new Tree();
     let tree = await lfTreeInstance.getItem(moduleParams.name)
-    console.log(tree)
     if (tree) {
         questionQueue.loadFromVanillaObject(tree)
     } else {
@@ -937,6 +1006,7 @@ function save_question() {
         obj = (keys.length == 1) ? obj[keys[0]] : ""
     }
     console.log('c/r =======> ', obj)
+    console.log(questionId)
     lfInstance.setItem(questionId, obj)
 
 }

@@ -19,7 +19,7 @@ export class Tree {
     }
 
     // filter out any falsy values...
-    value = value.filter((x) => x);
+    
     if (value.length == 0) throw "cannot add an empty or falsy array to the tree";
     value.forEach((x) => {
       let child = new TreeNode(x);
@@ -27,6 +27,29 @@ export class Tree {
       this.currentNode.addChild(child);
     });
     //console.log(this.currentNode.children, this.rootNode.children);
+  }
+
+  addLoop(values, numIters){
+    if (!values) throw "adding a falsy value to the tree.";
+    values = values.filter((x) => x);
+    if(values.length == 0){
+      return;
+    }
+    for(let j = 0; j < numIters; j++){
+      let currNode = new TreeNode(values[0]);
+      let rootNode = currNode;
+      for(let i = 1; i < values.length; i++){
+        let child = new TreeNode(values[i]);
+        child.setParent(currNode);
+        currNode.addChild(child);
+        currNode = child;
+      };
+      console.log('looping 1!')
+      console.log(rootNode)
+      rootNode.setParent(this.currentNode);
+      this.currentNode.addChild(rootNode);
+    }
+
   }
 
   hasNext() {

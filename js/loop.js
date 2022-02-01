@@ -29,12 +29,14 @@ export function findLoops(txt) {
 }
 
 export function simpleLoopObject(markdown, indx) {
+    
     let loopMatch = Array.from(markdown.matchAll(loopRegex))[0]
     // loopMatch[0] is the entire match <loop>...</loop>
     // loopMatch[1] is the arguments in the loop tag
     // loopMatch[2] is the inner text of the loop tag    
 
     let args = argparser(loopMatch[1])
+    
     // I really hope you passed in an ID....
     if (!args.has("id")) args.id = `_loop_${indx}`
     let loopMarkdown = loopMatch[2]
@@ -57,7 +59,9 @@ export function simpleLoopObject(markdown, indx) {
 
     loopQuestions.unshift(loopStartQuestion)
     loopQuestions.push(loopEndQuestion)
-
+console.log('------------------loop----------------------------------')
+        console.log(args)
+        console.log(loopQuestions)
 
 
     // look for questions in

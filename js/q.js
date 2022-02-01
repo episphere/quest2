@@ -9,7 +9,7 @@ let previousResults = {}
 statusElement.innerText = "ready"
 backButton.addEventListener("click", backOrNext)
 nextButton.addEventListener("click", backOrNext)
-
+console.log('abcabcefg')
 function throttle_parsing(fun, timeout = 100) {
     if (throttle_parsing.last) {
         clearTimeout(throttle_parsing.last)
@@ -19,16 +19,34 @@ function throttle_parsing(fun, timeout = 100) {
 
 async function tempFun() {
     statusElement.innerText = "parsing markdown"
+    
     let curserLocation = markdown_element.selectionStart
     questions = await parseModule(markdown_element.value, rendered_text_element, previousResults);
+    console.log('-----questions------')
+    console.log(markdown_element.selectionStart)
+    console.log(questions[0])
+    console.log(questions)
     if (questions.length > 0) {
         let current_question = questions.find(element => {
+            //console.log(element)
+            //console.log(element.markdown_start);
+            //console.log(element.markdown_end);
+            //console.log(curserLocation)
             return (curserLocation >= element.markdown_start) && (curserLocation < element.markdown_end)
         })
-        if (!current_question) current_question = questions[questions.length - 1]
+        //console.log('Current Question!')
+        //console.log(current_question)
+        if (!current_question) current_question = questions[0]
+        current_question = questions[0]
+        //console.log(current_question)
+
+        //current_question = questions[0];
+        //console.log(current_question)
         render_question(current_question)
     }
+    //console.log(questions)
     window.questions = questions;
+    showButtons();
     statusElement.innerText = "ready"
 }
 // update the markdown element when the Markdown is updated
@@ -49,6 +67,7 @@ document.getElementById("uploadURL").addEventListener("click", (event) => {
     location.hash = document.getElementById("url").value
 })
 window.addEventListener("hashchange", () => {
+    console.log('testing efg')
     if (location.hash.length > 2) {
         let hashurl = location.hash.substr(1)
         let txt = fetch(hashurl)
@@ -61,6 +80,7 @@ window.addEventListener("hashchange", () => {
 
 async function parseMarkdown() {
     statusElement.innerText = "parsing markdown";
+    console.log('efgefg')
     await parseModule(markdown_element.value, rendered_text_element, previousResults);
     showButtons();
     statusElement.innerText = "ready";
@@ -121,6 +141,7 @@ async function addToMemory() {
         if (txt.length > 0) {
             previousResults = JSON.parse(txt)
             console.log(previousResults)
+            console.log('abcabc')
             statusElement.innerText = "Parsing Markdown"
             await parseModule(markdown_element.value, rendered_text_element, previousResults);
             statusElement.innerText = "Ready"
