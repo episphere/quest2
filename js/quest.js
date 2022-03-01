@@ -46,6 +46,33 @@ function grid_loop_reducer(startSign, stopSign) {
     }
 }
 
+function grid_loop_reducer1(startSign, stopSign) {
+    return (previous, current) => {
+        // the first question, just add...
+        
+        if (previous.length == 0) {
+            previous.push(current)
+            return previous
+        }
+        // if we are in a loop/grid, combine with the last...
+        let last = previous.pop()
+        console.log(last)
+        console.log(last.trim().match(stopSign))
+        if (last.startsWith(startSign) && !last.trim().match(stopSign)) {
+            last = last + current
+            previous.push(last)
+            return previous
+        }
+        // add the last back to the array
+        previous.push(last)
+        // and add the current to the array...
+        previous.push(current)
+
+        return previous
+
+    }
+}
+
 export function makeSimpleQuestion(markdown) {
     /*  There are 6 (or 9) parts to the regex...
     1) \[  the opening bracket
@@ -160,7 +187,7 @@ export async function parseModule(markdown, parentRootElement, previousResults =
     questions = questions.reduce(simple_question_reduce, [])
     // are the questions in a grid/loop
     // first deal with the loops (note: grid_loop_reducer return a function)
-    questions = questions.reduce(grid_loop_reducer("<loop", "</loop>"), [])
+    questions = questions.reduce(grid_loop_reducer1("<loop", /<\/loop.*>$/g), [])
     // now deal with the grids...
     questions = questions.reduce(grid_loop_reducer("|grid", "|"), [])
     // make the question objects...
@@ -211,6 +238,7 @@ export function render_question(question) {
             break;
         case "loop_start":
         case "loop_end":
+            console.log('Broken!')
             render_loop(question);
             break;
         case "loop_question":
@@ -715,6 +743,7 @@ function render(question) {
 export function nextQuestion() {
     // handle the first question differently...
     if (questionQueue.isEmpty()) {
+        console.log('empty!')
         questionQueue.add(questions[0].id);
         questionQueue.next();
         render_question(questions[questions[questionQueue.currentNode.value]])
@@ -722,6 +751,9 @@ export function nextQuestion() {
     }
     console.log('QUEUEUE')
     console.log(questionQueue)
+    if(questionQueue.currentNode.type == "loop_question"){
+        console.log('HERE')
+    }
     saveResultsToLocalForage();
     updateTree();
     renderNextQuestion();
@@ -793,10 +825,28 @@ function updateTree() {
         }
         if(questions[nextIndex].type == 'loop_end'){
             //skip past loop_end
-            nextIndex += 1;
+            console.log('hit end')
+            console.log(questions[nextIndex])
+            //check end
+            let maxCheck = questions[nextIndex].maxIter
+            let iter = questions[nextIndex].iter
+
+
+            if(parseInt(iter.toString()) >= parseInt(maxCheck.toString())){
+                console.log('WOOO')
+                nextIndex += 1;
+            }
+            else{
+                console.log('WEEEE')
+                console.log(iter)
+                console.log(maxCheck)
+                nextIndex = questions[nextIndex].loopStart
+            }
+            console.log(questionQueue)
         }
         if(questions[nextIndex].type == 'loop_start'){
             let numIters = questions[nextIndex].args.max
+            let startIndex = nextIndex;
             nextIndex += 1;
             let nextArray = []
 
@@ -804,6 +854,55 @@ function updateTree() {
                 
                 nextArray.push(questions[nextIndex].id)
                 nextIndex+=1;
+            }
+
+            if(questions[nextIndex].type == 'loop_end' && !questions[nextIndex]['iter']){
+                //setting iterationNumber
+                console.log('End found!')
+                console.log(questions[nextIndex])
+                questions[nextIndex]['iter'] = 1;
+                if(questions[nextIndex]['args'] && questions[nextIndex]['args']['max']){
+                   
+                    if(!isNaN(questions[nextIndex]['args']['max'])){ 
+                        console.log('loop_end here 1')
+                        questions[nextIndex]['maxIter'] = parseInt(questions[nextIndex]['args']['max']);
+
+                    }
+                    else{
+                        console.log('Checking localforage for ' + questions[nextIndex]['args']['max'])
+                        setTimeout(function () {
+                            lfInstance.getItem('PREG3').then((value) => {
+                                console.log(value + ' found!')
+                            })
+                        }, 5000);
+                        lfInstance.getItem('PREG3').then((value) => {
+                            console.log(value + ' found!')
+                        })
+                        lfInstance.getItem(questions[nextIndex]['args']['max']).then((value) =>{
+                            console.log('found in localforage: ' + value)
+                            questions[nextIndex]['maxIter'] = parseInt(value.toString());
+                        }).catch((error) => {
+                            console.log(error)
+                        })
+                    }
+                }
+                else if(questions[startIndex]['args'] && questions[startIndex]['args']['max']){
+                    console.log('loop_)end here 2')
+                    questions[nextIndex]['maxIter'] = parseInt(questions[startIndex]['args']['max']);
+
+                }
+                else{
+                    console.log('_____________________eRROR________________')
+                }
+                console.log('qpubvwspoivbasdolvbas')
+                console.log(questions[nextIndex]['maxIter'])
+
+                questions[nextIndex]['loopStart'] = startIndex
+                questionQueue.addLoop(nextArray, numIters)
+            }
+            else{
+                console.log('Iterate Loop!!!!')
+                iterateLoop(1, nextIndex)
             }
             
             console.log(questions[nextIndex])
@@ -822,7 +921,10 @@ function updateTree() {
                 }
             })
             */
-           questionQueue.addLoop(nextArray, numIters)
+           
+           
+           console.log('loop complete')
+           console.log(questionQueue)
 
         }
         else{
@@ -951,6 +1053,9 @@ async function saveResultsToLocalForage() {
         case "question":
             save_question()
             break;
+        case "loop_question":
+            save_question_loop()
+            break;
         default:
             console.warn("CANNOT SAVE QUESTION TYPE: ", questionType)
     }
@@ -1010,3 +1115,89 @@ function save_question() {
     lfInstance.setItem(questionId, obj)
 
 }
+
+function save_question_loop() {
+
+    let obj = {}
+    let questionId = questionQueue.currentNode.value
+    let iter = questionQueue.currentNode.iter
+    let radioInputs = Array.from(rootElement.querySelectorAll('input[type=radio]'))
+    obj = radioInputs.reduce((old, element) => {
+        if (element.checked) {
+            old[element.name] = element.value
+        } else if (!old.hasOwnProperty(element.name)) {
+            old[element.name] = ""
+        }
+        return old;
+    }, obj)
+    let numRadios = Object.getOwnPropertyNames(obj).length;
+
+    // handle check boxes...
+    let checkbox_inputs = Array.from(rootElement.querySelectorAll('input[type=checkbox]'))
+    obj = checkbox_inputs.reduce((old, element) => {
+        // make sure the element name is in the results,
+        // even if it unchecked..
+        if (!old.hasOwnProperty(element.name)) {
+            old[element.name] = []
+        }
+        if (!element.checked) return old;
+
+        old[element.name] = old[element.name].concat(element.value)
+        return old;
+    }, obj)
+
+    //handle inputs that are not radio/checkboxes...
+    let other_inputs = Array.from(rootElement.querySelectorAll('textarea,input:not([type=radio]):not([type=checkbox]):not([type=hidden])'))
+    obj = other_inputs.reduce((old, element) => {
+        console.log(`element id: ${element.id}  value: ${element.value} old: ${old}`)
+        if (element.value?.length > 0) {
+            old[element.id] = element.value
+        }
+        return old;
+    }, obj)
+    let numOther = other_inputs.length;
+
+
+
+
+    let simplify = (numRadios + numOther <= 1) && (checkbox_inputs.length == 0)
+    if (simplify) {
+        let keys = Object.getOwnPropertyNames(obj)
+        obj = (keys.length == 1) ? obj[keys[0]] : ""
+    }
+    console.log('c/r =======> ', obj)
+    console.log(questionId + '_' + iter)
+    lfInstance.setItem(questionId + '_' + iter, obj)
+
+}
+
+function iterateLoop(negative, currIndex){
+    let curr = questions[currIndex];
+    
+    console.log('Iterating here!')
+    console.log(curr)
+    while(curr.type && curr.type != 'loop_end'){
+      curr = questions[currIndex]
+      console.log('iter inner')
+      console.log(curr)
+      if(curr.iter){
+        console.log('Im HERE! Check for iter')
+        console.log(curr.iter)
+        curr.iter += 1 * negative;
+      }
+      else{
+        curr.iter = 1;
+      }
+      currIndex += 1
+      
+    }
+    curr = questions[currIndex]
+    if(curr.type == 'loop_end'){
+      if(curr.iter){
+        curr.iter += 1 * negative;
+      }
+      else{
+        curr.iter = 1;
+      }
+    }
+  }

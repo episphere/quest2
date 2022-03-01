@@ -32,25 +32,59 @@ export class Tree {
   addLoop(values, numIters){
     if (!values) throw "adding a falsy value to the tree.";
     values = values.filter((x) => x);
+    numIters = 1;
     if(values.length == 0){
       return;
     }
-    for(let j = 0; j < numIters; j++){
-      let currNode = new TreeNode(values[0]);
-      let rootNode = currNode;
-      for(let i = 1; i < values.length; i++){
-        let child = new TreeNode(values[i]);
-        child.setParent(currNode);
-        currNode.addChild(child);
-        currNode = child;
-      };
-      console.log('looping 1!')
-      console.log(rootNode)
-      rootNode.setParent(this.currentNode);
-      this.currentNode.addChild(rootNode);
+    let currNode = new TreeNode(values[0]);
+    console.log('---------------------12351235123512----------------------------')
+    console.log(currNode)
+    if(!currNode['iter']){
+      currNode['iter'] = 1
     }
+    let rootNode = currNode;
+    for(let i = 1; i < values.length; i++){
+      let child = new TreeNode(values[i]);
+      child.setParent(currNode);
+      currNode.addChild(child);
+      currNode = child;
+    };
+    console.log('looping 1!')
+    console.log(rootNode)
+    rootNode.setParent(this.currentNode);
+    this.currentNode.addChild(rootNode);
 
   }
+  //negative allows us to go backwards for the iterations
+  iterateLoop(negative){
+    let curr = this.currentNode;
+    
+    console.log('Iterating here!')
+    console.log(curr)
+    while(curr.type && curr.type != 'loop_end'){
+      console.log('iter inner')
+      console.log(curr)
+      if(curr.iter){
+        console.log('Im HERE! Check for iter')
+        console.log(curr.iter)
+        curr.iter += 1 * negative;
+      }
+      else{
+        curr.iter = 1;
+      }
+      curr = curr.next
+    }
+    if(curr.type == 'loop_end'){
+      if(curr.iter){
+        curr.iter += 1 * negative;
+      }
+      else{
+        curr.iter = 1;
+      }
+    }
+  }
+
+
 
   hasNext() {
     return this.currentNode.next().done == false;
