@@ -1,0 +1,16 @@
+
+{"name":"Module2Testing"} [INTROM2] In this set of questions we ask about a few topics that affect your health. These topics include your current and past use of medications, your physical activity (including exercise), and your sleep habits.
+
+[PREG3?] How many times have you been pregnant? Please include all live births, as well as pregnancies that ended as stillbirths, miscarriages, ectopic or tubal pregnancies, or termination. Twins, triplets, or higher multiples count as one pregnancy.
+
+#Pregnancies |__|__|min=1 max=99|
+
+<loop max=5>
+
+[PREG4?]
+How old were you when your #loop|displayif=or(equals(#loop,1),equals(#loop,21))|st||displayif=or(equals(#loop,2),equals(#loop,22))|nd||displayif=or(equals(#loop,3),equals(#loop,23))|rd||displayif=and(greaterThanOrEqual(#loop,4),and(doesNotEqual(#loop,21),and(doesNotEqual(#loop,22),doesNotEqual(#loop,23))))|th| pregnancy began?
+Age |__|__|id=pregAge min=0 max=sum(isDefined(AGE,age),1)|
+
+</loop max=PREG3>
+
+[END,end]  Thank you for completing this section of the questionnaire.
